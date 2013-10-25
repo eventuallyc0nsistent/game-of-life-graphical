@@ -54,16 +54,20 @@ class GameFrame extends JFrame
 		grid_panel.setLayout(new GridLayout(rows,cols));
 
 		// make a grid of buttons  and add buttons to the emptyGrid
+		// create instances of game grid and next generation grid to use
 		MakeGrid gameGrid = new MakeGrid(rows,cols);
 		MakeGrid nextGrid = new MakeGrid(rows,cols);
 
+		// get the grid array from the instance
 		this.grid = gameGrid.grid;
 		this.nextGenGrid = nextGrid.grid;
-		JPanel emptyGridPanel = gameGrid.createEmptyGridOfButtons(rows,cols,grid_panel,grid);
+
+		// create empty grid of buttons
+		JPanel emptyGridPanel = gameGrid.createEmptyGridOfButtons(rows,cols,grid_panel,this.grid);
 
 		// action listeners
-		clear_btn.addActionListener(new ClearButtonListener(rows,cols,grid));
-		next_btn.addActionListener(new NextButtonListener(rows,cols,grid,nextGenGrid));
+		clear_btn.addActionListener(new ClearButtonListener(rows,cols,this.grid));
+		next_btn.addActionListener(new NextButtonListener(rows,cols,this.grid,this.nextGenGrid));
 
 		menu_panel.add(next_btn);
 		menu_panel.add(clear_btn);
@@ -71,13 +75,6 @@ class GameFrame extends JFrame
 		add(emptyGridPanel);
 
 	}
-
-
-	public void setGridButtonArray(JButton[][] new_grid)
-	{
-		this.grid = new_grid;
-	}
-
 
 	/*
 	Set height and width of frame
@@ -93,11 +90,17 @@ make a grid
  */
 class MakeGrid
 {
-	static JButton[][] grid;
+	public JButton[][] grid;
+	static JButton[][] next_gen_grid;
 
 	public MakeGrid(int rows, int cols)
 	{
-		grid = new JButton[rows][cols];
+		this.grid = new JButton[rows][cols];
+	}
+
+	public void setGridButtonArray(JButton[][] new_grid)
+	{
+		this.grid = new_grid;
 	}
 
 	/*
@@ -176,8 +179,11 @@ class NextButtonListener implements ActionListener
 	private int rows;
 	private int cols;
 	private JButton[][] grid;
-	private JButton[][] nextGenGrid;
+	public JButton[][] nextGenGrid;
+	
 	ActionListener buttonListener = new GridButtonListener();
+	MakeGrid theGameGrid ;
+	MakeGrid theNextGenGrid ;
 
 	public NextButtonListener(int rows, int cols, JButton[][] old_grid, JButton[][] nextGenGrid)
 	{
@@ -185,6 +191,7 @@ class NextButtonListener implements ActionListener
 		this.cols = cols;
 		this.grid = old_grid;
 		this.nextGenGrid = nextGenGrid;
+
 	}
 
 	public void actionPerformed(ActionEvent e)
@@ -198,47 +205,55 @@ class NextButtonListener implements ActionListener
 				 */
 				if(this.grid[i][j].getBackground() == Color.BLACK)
 				{
+					// System.out.println(i+":"+j);
 					String alive = "ALIVE";
 					boolean isAlive = this.isAlive(alive,i,j,grid,rows,cols);
 					if(isAlive)
 					{
-						nextGenGrid[i][j] = new JButton();
-						nextGenGrid[i][j].setBackground(Color.BLACK);
-						nextGenGrid[i][j].addActionListener(buttonListener);
-					}	
+						this.nextGenGrid[i][j] = new JButton();
+						this.nextGenGrid[i][j].setBackground(Color.BLACK);
+					}
+						
 				}
 
 				/*
 				Check for Dead cells
 				 */
-				if(this.grid[i][j].getBackground() == Color.WHITE)
+				else if(this.grid[i][j].getBackground() == Color.WHITE)
 				{
 					String dead = "DEAD";
 					boolean isAlive = this.isAlive(dead,i,j,grid,rows,cols);
 					if(isAlive)
 					{
-						nextGenGrid[i][j] = new JButton();
-						nextGenGrid[i][j].setBackground(Color.WHITE);
-						nextGenGrid[i][j].addActionListener(buttonListener);
-					}	
+						this.nextGenGrid[i][j] = new JButton();
+						this.nextGenGrid[i][j].setBackground(Color.BLACK);
+					}
+						
+				}
+				
+				else
+				{
+					this.nextGenGrid[i][j] = new JButton();
+					this.nextGenGrid[i][j].setBackground(Color.WHITE);
 				}
 
-				System.out.println(nextGenGrid[i][j].getBackground());
-					
-			} 
-
+			}	 
 		}
 
-		this.grid.setGridButtonArray(nextGenGrid);
+		this.grid = nextGenGrid;
+		System.out.println("-------");
+
 	}
 
 	/*
 	{x-1,y-1}       {x-1,y}         {x-1,y+1} 
      {x,y-1}         {x,y}           {x,y+1}
     {x+1,y-1}       {x+1,y}         {x+1,y+1}
+
 	 */
 	public boolean isAlive(String deadOrAlive, int x,int y, JButton[][] grid,int rows , int cols)
 	{
+
 		int neighborCount = 0;
 
 		if(x-1 >= 0 && y-1 >= 0)
@@ -273,11 +288,16 @@ class NextButtonListener implements ActionListener
 			if(grid[x+1][y+1].getBackground() == Color.BLACK)
 				neighborCount++;
 
-		if((neighborCount == 2 || neighborCount == 3) && deadOrAlive == "ALIVE")
+		if((neighborCount == 2 || neighborCount == 3) && deadOrAlive.equals("ALIVE"))
+		{
 			return true;
-		else if (neighborCount == 3 && deadOrAlive == "DEAD")
+		}
+		else if ((neighborCount == 3) && deadOrAlive.equals("DEAD"))
+		{
 			return true;
+		}
 		else 
 			return false;
 	}
+
 }
